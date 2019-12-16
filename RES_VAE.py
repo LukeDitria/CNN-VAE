@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.utils.data
 import torch.nn.functional as F
 
+#Residual down sampling block for the encoder
+#Average pooling is used to perform the downsampling
 class Res_down(nn.Module):
     def __init__(self, channel_in, channel_out, scale = 2):
         super(Res_down, self).__init__()
@@ -26,6 +28,9 @@ class Res_down(nn.Module):
         x = F.rrelu(x + skip)
         return x
 
+    
+#Residual up sampling block for the decoder
+#Nearest neighbour is used to perform the upsampling
 class Res_up(nn.Module):
     def __init__(self, channel_in, channel_out, scale = 2):
         super(Res_up, self).__init__()
@@ -49,6 +54,10 @@ class Res_up(nn.Module):
         x = F.rrelu(x + skip)
         return x
     
+#Encoder block
+#Built for a 64x64x3 image and will result in a latent vector of size Z x 1 x 1 
+#As the network is fully convolutional it will work for other larger images sized 2^n the latent
+#feature map size will just no longer be 1 - aka Z x H x W
 class Encoder(nn.Module):
     def __init__(self, channels, ch = 64, z = 512):
         super(Encoder, self).__init__()
@@ -80,6 +89,8 @@ class Encoder(nn.Module):
             logvar = None
         return x, mu, logvar
     
+#Decoder block
+#Built to be a mirror of the encoder block
 class Decoder(nn.Module):
     def __init__(self, channels, ch = 64, z = 512):
         super(Decoder, self).__init__()
@@ -100,11 +111,16 @@ class Decoder(nn.Module):
 
         return x 
     
+#VAE network, uses the above encoder and decoder blocks 
 class VAE(nn.Module):
-    def __init__(self, channel_in):
+    def __init__(self, channel_in, z = 512):
         super(VAE, self).__init__()
-        self.encoder = Encoder(channel_in)
-        self.decoder = Decoder(channel_in)
+        """Res VAE Network
+        channel_in  = number of channels of the image 
+        z = the number of channels of the latent representation (for a 64x64 image this is the size of the latent vector)"""
+        
+        self.encoder = Encoder(channel_in, z = z)
+        self.decoder = Decoder(channel_in, z = z)
 
     def forward(self, x, Train = True):
         encoding, mu, logvar = self.encoder(x)
