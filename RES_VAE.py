@@ -123,9 +123,6 @@ class VAE(nn.Module):
         self.decoder = Decoder(channel_in, z = z)
 
     def forward(self, x, Train = True):
-        encoding, mu, logvar = self.encoder(x)
-        if Train:
-            x = self.decoder(encoding)
-        else:
-            x = self.decoder(mu)
-        return x, mu, logvar
+        encoding, mu, logvar = self.encoder(x, Train)
+        recon = self.decoder(encoding)
+        return recon, mu, logvar
