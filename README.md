@@ -1,6 +1,8 @@
 
 # CNN-VAE
 A Res-Net Style VAE with an adjustable perception loss using a pre-trained vgg19
+NOTE: RES_VAE_64_old.py was used to generate the results below
+ToDo: Update results with new model
 
 ## Results
 
