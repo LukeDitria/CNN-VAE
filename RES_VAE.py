@@ -61,12 +61,13 @@ class Res_up(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, channels, ch = 64, z = 512):
         super(Encoder, self).__init__()
-        self.conv1 = Res_down(channels, ch)
-        self.conv2 = Res_down(ch, 2*ch)
-        self.conv3 = Res_down(2*ch, 4*ch)
-        self.conv4 = Res_down(4*ch, 8*ch)
-        self.conv_mu = nn.Conv2d(8*ch, z, 4, 1)
-        self.conv_logvar = nn.Conv2d(8*ch, z, 4, 1)
+        self.conv1 = Res_down(channels, ch)#64
+        self.conv2 = Res_down(ch, 2*ch)#32
+        self.conv3 = Res_down(2*ch, 4*ch)#16
+        self.conv4 = Res_down(4*ch, 8*ch)#8
+        self.conv5 = Res_down(8*ch, 8*ch)#4
+        self.conv_mu = nn.Conv2d(8*ch, z, 2, 2)#2
+        self.conv_logvar = nn.Conv2d(8*ch, z, 2, 2)#2
 
     def sample(self, mu, logvar):
         std = torch.exp(0.5*logvar)
@@ -78,7 +79,8 @@ class Encoder(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
-        
+        x = self.conv5(x)
+
         if Train:
             mu = self.conv_mu(x)
             logvar = self.conv_logvar(x)
@@ -94,12 +96,13 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, channels, ch = 64, z = 512):
         super(Decoder, self).__init__()
-        self.conv1 = Res_up(z, ch*8, scale = 4)
-        self.conv2 = Res_up(ch*8, ch*4)
-        self.conv3 = Res_up(ch*4, ch*2)
-        self.conv4 = Res_up(ch*2, ch)
-        self.conv5 = Res_up(ch, ch//2)
-        self.conv6 = nn.Conv2d(ch//2, channels, 3, 1, 1)
+        self.conv1 = Res_up(z, ch*8)
+        self.conv2 = Res_up(ch*8, ch*8)
+        self.conv3 = Res_up(ch*8, ch*4)
+        self.conv4 = Res_up(ch*4, ch*2)
+        self.conv5 = Res_up(ch*2, ch)
+        self.conv6 = Res_up(ch, ch//2)
+        self.conv7 = nn.Conv2d(ch//2, channels, 3, 1, 1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -108,6 +111,7 @@ class Decoder(nn.Module):
         x = self.conv4(x)
         x = self.conv5(x)
         x = self.conv6(x)
+        x = self.conv7(x)
 
         return x 
     
