@@ -2,7 +2,6 @@
 # CNN-VAE
 A Res-Net Style VAE with an adjustable perception loss using a pre-trained vgg19
 NOTE: RES_VAE_64_old.py was used to generate the results below
-ToDo: Update results with new model
 
 ## Results
 
@@ -21,4 +20,8 @@ Results on validation images of the STL10 dataset at 64x64 with a latent vector 
 The images in the STL10 have a lot of variation meaning more "features" need to be encoded in the latent space to achieve a good reconstruction. Using a data-set with less variation (and the same latent vector size) should results in a higher quality reconstructed image.
 
 ![Celeba trained with perception loss](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE_celeba_64.png)
+
+**New Model** trained on CelebA at 128x128 resolution (latent space is therefore 512x2x2) using all layers of the VGG model for the perception loss
+![Celeba 128x128 trained with perception loss](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE_CelebA_all_Feat_new_model_128.png)
+
 
