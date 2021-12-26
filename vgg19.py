@@ -20,22 +20,26 @@ class VGG19(nn.Module):
         self.conv7 = nn.Conv2d(4 * width, 4 * width, 3, 1, 1)
         self.conv8 = nn.Conv2d(4 * width, 4 * width, 3, 1, 1)
         
-        self.conv9 = nn.Conv2d(4 * width, 8 * width, 3, 1, 1)
-        self.conv10 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
-        self.conv11 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
-        self.conv12 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+#         self.conv9 = nn.Conv2d(4 * width, 8 * width, 3, 1, 1)
+#         self.conv10 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+#         self.conv11 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+#         self.conv12 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
         
-        self.conv13 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
-        self.conv14 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
-        self.conv15 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
-        self.conv16 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+        # Add/Remove layers of feature extractor - ToDo: need a better way of doing this now
+        # With larger images you may want to use more layers
+        
+#         self.conv13 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+#         self.conv14 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+#         self.conv15 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
+#         self.conv16 = nn.Conv2d(8 * width, 8 * width, 3, 1, 1)
         
         self.mp = nn.MaxPool2d(kernel_size=2, stride=2)
         
         self.relu = nn.ReLU(inplace=True)
         
     def feature_loss(self, x):
-        return (x[:x.shape[0]//2] - x[x.shape[0]//2:]).pow(2).mean()
+        diff = x[:x.shape[0]//2] - x[x.shape[0]//2:]
+        return diff.pow(2).mean()
         
     def forward(self, x):
         """
@@ -62,26 +66,26 @@ class VGG19(nn.Module):
         loss += self.feature_loss(x7)
         x8 = self.relu(self.conv8(x7))
         loss += self.feature_loss(x8)
-        x8 = self.mp(x8)
+#         x8 = self.mp(x8)
 
-        x9 = self.relu(self.conv9(x8))
-        loss += self.feature_loss(x9)
-        x10 = self.relu(self.conv10(x9))
-        loss += self.feature_loss(x10)
-        x11 = self.relu(self.conv11(x10))
-        loss += self.feature_loss(x11)
-        x12 = self.relu(self.conv12(x11))
-        loss += self.feature_loss(x12)
-        x12 = self.mp(x12)
+#         x9 = self.relu(self.conv9(x8))
+#         loss += self.feature_loss(x9)
+#         x10 = self.relu(self.conv10(x9))
+#         loss += self.feature_loss(x10)
+#         x11 = self.relu(self.conv11(x10))
+#         loss += self.feature_loss(x11)
+#         x12 = self.relu(self.conv12(x11))
+#         loss += self.feature_loss(x12)
+#         x12 = self.mp(x12)
 
-        x13 = self.relu(self.conv13(x12))
-        loss += self.feature_loss(x13)
-        x14 = self.relu(self.conv14(x13))
-        loss += self.feature_loss(x14)
-        x15 = self.relu(self.conv15(x14))
-        loss += self.feature_loss(x15)
-        x16 = self.relu(self.conv16(x15))
-        loss += self.feature_loss(x16)
+#         x13 = self.relu(self.conv13(x12))
+#         loss += self.feature_loss(x13)
+#         x14 = self.relu(self.conv14(x13))
+#         loss += self.feature_loss(x14)
+#         x15 = self.relu(self.conv15(x14))
+#         loss += self.feature_loss(x15)
+#         x16 = self.relu(self.conv16(x15))
+#         loss += self.feature_loss(x16)
 
-        return loss/16
+        return loss/8
         
