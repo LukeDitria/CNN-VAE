@@ -71,19 +71,19 @@ class Encoder(nn.Module):
         eps = torch.randn_like(std)
         return mu + eps*std
         
-    def forward(self, x, Train = True):
+    def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
         
-        if Train:
+        if self.training:
             mu = self.conv_mu(x)
             logvar = self.conv_logvar(x)
             x = self.sample(mu, logvar)
         else:
-            x = self.conv_mu(x)
-            mu = None
+            mu = self.conv_mu(x)
+            mu = x
             logvar = None
         return x, mu, logvar
     
@@ -120,7 +120,7 @@ class VAE(nn.Module):
         self.encoder = Encoder(channel_in, z = z)
         self.decoder = Decoder(channel_in, z = z)
 
-    def forward(self, x, Train = True):
-        encoding, mu, logvar = self.encoder(x, Train)
+    def forward(self, x):
+        encoding, mu, logvar = self.encoder(x)
         recon = self.decoder(encoding)
         return recon, mu, logvar
