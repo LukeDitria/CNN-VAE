@@ -1,6 +1,10 @@
 
 # CNN-VAE
-A Res-Net Style VAE with an adjustable perception loss using a pre-trained vgg19
+A Res-Net Style VAE with an adjustable perceptual loss using a pre-trained vgg19. <br>
+Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.org/pdf/1610.00291.pdf)
+<br>
+<br>
+Latent space interpolation <br>
 ![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
 
 ## Results
