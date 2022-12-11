@@ -8,55 +8,52 @@ class ResDown(nn.Module):
     """
     Residual down sampling block for the encoder
     """
-    def __init__(self, channel_in, channel_out, scale=2):
-        super(ResDown, self).__init__()
-        
-        self.conv1 = nn.Conv2d(channel_in, channel_out//2, 3, 1, 1)
-        self.BN1 = nn.BatchNorm2d(channel_out//2)
-        self.conv2 = nn.Conv2d(channel_out//2, channel_out, 3, 1, 1)
-        self.BN2 = nn.BatchNorm2d(channel_out)
-        
-        self.conv3 = nn.Conv2d(channel_in, channel_out, 3, 1, 1)
 
-        self.AvePool = nn.AvgPool2d(scale, scale)
-        
+    def __init__(self, channel_in, channel_out, kernel_size=3):
+        super(ResDown, self).__init__()
+        self.conv1 = nn.Conv2d(channel_in, channel_out // 2, kernel_size, 2, kernel_size // 2)
+        self.bn1 = nn.BatchNorm2d(channel_out // 2, eps=1e-4)
+        self.conv2 = nn.Conv2d(channel_out // 2, channel_out, kernel_size, 1, kernel_size // 2)
+        self.bn2 = nn.BatchNorm2d(channel_out, eps=1e-4)
+
+        self.conv3 = nn.Conv2d(channel_in, channel_out, kernel_size, 2, kernel_size // 2)
+
+        self.act_fnc = nn.ELU()
+
     def forward(self, x):
-        skip = self.conv3(self.AvePool(x))
-        
-        x = F.rrelu(self.BN1(self.conv1(x)))
-        x = self.AvePool(x)
-        x = self.BN2(self.conv2(x))
-        
-        x = F.rrelu(x + skip)
-        return x
+        skip = self.conv3(x)
+        x = self.act_fnc(self.bn1(self.conv1(x)))
+        x = self.conv2(x)
+        return self.act_fnc(self.bn2(x + skip))
 
 
 class ResUp(nn.Module):
     """
     Residual up sampling block for the decoder
     """
-    def __init__(self, channel_in, channel_out, scale=2):
+
+    def __init__(self, channel_in, channel_out, kernel_size=3, scale_factor=2):
         super(ResUp, self).__init__()
-        
-        self.conv1 = nn.Conv2d(channel_in, channel_out//2, 3, 1, 1)
-        self.BN1 = nn.BatchNorm2d(channel_out//2)
-        self.conv2 = nn.Conv2d(channel_out//2, channel_out, 3, 1, 1)
-        self.BN2 = nn.BatchNorm2d(channel_out)
-        
-        self.conv3 = nn.Conv2d(channel_in, channel_out, 3, 1, 1)
-        
-        self.UpNN = nn.Upsample(scale_factor = scale,mode = "nearest")
-        
+
+        self.conv1 = nn.Conv2d(channel_in, channel_out // 2, kernel_size, 1, kernel_size // 2)
+        self.bn1 = nn.BatchNorm2d(channel_out // 2, eps=1e-4)
+        self.conv2 = nn.Conv2d(channel_out // 2, channel_out, kernel_size, 1, kernel_size // 2)
+        self.bn2 = nn.BatchNorm2d(channel_out, eps=1e-4)
+
+        self.conv3 = nn.Conv2d(channel_in, channel_out, kernel_size, 1, kernel_size // 2)
+
+        self.up_nn = nn.Upsample(scale_factor=scale_factor, mode="nearest")
+
+        self.act_fnc = nn.ELU()
+
     def forward(self, x):
-        skip = self.conv3(self.UpNN(x))
-        
-        x = F.rrelu(self.BN1(self.conv1(x)))
-        x = self.UpNN(x)
-        x = self.BN2(self.conv2(x))
-        
-        x = F.rrelu(x + skip)
-        return x
-    
+        x = self.up_nn(x)
+        skip = self.conv3(x)
+        x = self.act_fnc(self.bn1(self.conv1(x)))
+        x = self.conv2(x)
+
+        return self.act_fnc(self.bn2(x + skip))
+
 
 class Encoder(nn.Module):
     """
@@ -68,15 +65,16 @@ class Encoder(nn.Module):
     When in .eval() the Encoder will not sample from the distribution and will instead output mu as the encoding vector
     and log_var will be None
     """
-    def __init__(self, channels, ch=64, z=512):
+    def __init__(self, channels, ch=64, latent_channels=512):
         super(Encoder, self).__init__()
-        self.conv1 = ResDown(channels, ch)  # 64
-        self.conv2 = ResDown(ch, 2*ch)  # 32
-        self.conv3 = ResDown(2*ch, 4*ch)  # 16
-        self.conv4 = ResDown(4*ch, 8*ch)  # 8
-        self.conv5 = ResDown(8*ch, 8*ch)  # 4
-        self.conv_mu = nn.Conv2d(8*ch, z, 2, 2)  # 2
-        self.conv_log_var = nn.Conv2d(8*ch, z, 2, 2)  # 2
+        self.conv_in = nn.Conv2d(channels, ch, 7, 1, 3)
+        self.res_down_block1 = ResDown(ch, 2 * ch)
+        self.res_down_block2 = ResDown(2 * ch, 4 * ch)
+        self.res_down_block3 = ResDown(4 * ch, 8 * ch)
+        self.res_down_block4 = ResDown(8 * ch, 16 * ch)
+        self.conv_mu = nn.Conv2d(16 * ch, latent_channels, 4, 1)
+        self.conv_log_var = nn.Conv2d(16 * ch, latent_channels, 4, 1)
+        self.act_fnc = nn.ELU()
 
     def sample(self, mu, log_var):
         std = torch.exp(0.5*log_var)
@@ -84,20 +82,18 @@ class Encoder(nn.Module):
         return mu + eps*std
         
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
+        x = self.act_fnc(self.conv_in(x))
+        x = self.res_down_block1(x)  # 32
+        x = self.res_down_block2(x)  # 16
+        x = self.res_down_block3(x)  # 8
+        x = self.res_down_block4(x)  # 4
+        mu = self.conv_mu(x)  # 1
+        log_var = self.conv_log_var(x)  # 1
 
         if self.training:
-            mu = self.conv_mu(x)
-            log_var = self.conv_log_var(x)
             x = self.sample(mu, log_var)
         else:
-            mu = self.conv_mu(x)
             x = mu
-            log_var = None
 
         return x, mu, log_var
 
@@ -108,24 +104,23 @@ class Decoder(nn.Module):
     Built to be a mirror of the encoder block
     """
 
-    def __init__(self, channels, ch=64, z=512):
+    def __init__(self, channels, ch=64, latent_channels=512):
         super(Decoder, self).__init__()
-        self.conv1 = ResUp(z, ch*8)
-        self.conv2 = ResUp(ch*8, ch*8)
-        self.conv3 = ResUp(ch*8, ch*4)
-        self.conv4 = ResUp(ch*4, ch*2)
-        self.conv5 = ResUp(ch*2, ch)
-        self.conv6 = ResUp(ch, ch//2)
-        self.conv7 = nn.Conv2d(ch//2, channels, 3, 1, 1)
+        self.conv_t_up = nn.ConvTranspose2d(latent_channels, ch * 16, 4, 1)
+        self.res_up_block1 = ResUp(ch * 16, ch * 8)
+        self.res_up_block2 = ResUp(ch * 8, ch * 4)
+        self.res_up_block3 = ResUp(ch * 4, ch * 2)
+        self.res_up_block4 = ResUp(ch * 2, ch)
+        self.conv_out = nn.Conv2d(ch, channels, 3, 1, 1)
+        self.act_fnc = nn.ELU()
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        x = self.conv6(x)
-        x = self.conv7(x)
+        x = self.act_fnc(self.conv_t_up(x))  # 4
+        x = self.res_up_block1(x)  # 8
+        x = self.res_up_block2(x)  # 16
+        x = self.res_up_block3(x)  # 32
+        x = self.res_up_block4(x)  # 64
+        x = torch.tanh(self.conv_out(x))
 
         return x 
 
@@ -134,7 +129,7 @@ class VAE(nn.Module):
     """
     VAE network, uses the above encoder and decoder blocks
     """
-    def __init__(self, channel_in, ch=64, z=512):
+    def __init__(self, channel_in=3, ch=64, latent_channels=512):
         super(VAE, self).__init__()
         """Res VAE Network
         channel_in  = number of channels of the image 
@@ -142,10 +137,10 @@ class VAE(nn.Module):
         (for a 64x64 image this is the size of the latent vector)
         """
         
-        self.encoder = Encoder(channel_in, ch=ch, z=z)
-        self.decoder = Decoder(channel_in, ch=ch, z=z)
+        self.encoder = Encoder(channel_in, ch=ch, latent_channels=latent_channels)
+        self.decoder = Decoder(channel_in, ch=ch, latent_channels=latent_channels)
 
     def forward(self, x):
         encoding, mu, log_var = self.encoder(x)
-        recon = self.decoder(encoding)
-        return recon, mu, log_var
+        recon_img = self.decoder(encoding)
+        return recon_img, mu, log_var
