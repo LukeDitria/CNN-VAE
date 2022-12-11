@@ -3,17 +3,16 @@
 A Res-Net Style VAE with an adjustable perceptual loss using a pre-trained vgg19. <br>
 Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.org/pdf/1610.00291.pdf)
 <br>
-NEW!
-!Added training script with loss logging etc!
-Basic train command:
+# NEW!
+Added training script with loss logging etc. Dataset uses Pytorch "ImageFolder" dataset, code assumes there is no pre-defined train/test split and creates
+one if w fixed random seed so it will be the same every time the code is run.<br>
+<b> Basic train command: </b><br>
 python3 train_vae.py -mn test_run --dataset_root #path to dataset root#
 <br>
-
 <br>
+## Results
 Latent space interpolation <br>
 ![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
-
-## Results
 
 Results on validation images of the STL10 dataset at 64x64 with a latent vector size of 512 (images on top are the reconstruction)
 NOTE: RES_VAE_64_old.py was used to generate the results below<br>
