@@ -20,9 +20,9 @@ from vgg19 import VGG19
 parser = argparse.ArgumentParser(description="Training Params")
 # string args
 parser.add_argument("--model_name", "-mn", help="Experiment save name", type=str, required=True)
-parser.add_argument("--dataset_root", help="Dataset root dir", type=str, required=True)
+parser.add_argument("--dataset_root", "-dr", help="Dataset root dir", type=str, required=True)
 
-parser.add_argument("--save_dir", help="Root dir for saving model and data", type=str, default=".")
+parser.add_argument("--save_dir", "-sd", help="Root dir for saving model and data", type=str, default=".")
 
 # int args
 parser.add_argument("--nepoch", help="Number of training epochs", type=int, default=2000)
@@ -36,10 +36,11 @@ parser.add_argument("--save_interval", '-si', help="Number of iteration per save
 
 # float args
 parser.add_argument("--lr", help="Learning rate", type=float, default=1e-4)
+parser.add_argument("--feature_scale", "-fs", help="Feature loss scale", type=float, default=1)
+parser.add_argument("--kl_scale", "-ks", help="KL penalty scale", type=float, default=1)
 
 # bool args
 parser.add_argument("--load_checkpoint", '-cp', action='store_true', help="Load from checkpoint")
-
 
 args = parser.parse_args()
 
@@ -82,8 +83,9 @@ optimizer = optim.Adam(vae_net.parameters(), lr=args.lr)
 # AMP Scaler
 scaler = torch.cuda.amp.GradScaler()
 
-# Create the feature loss module
-feature_extractor = VGG19().to(device)
+# Create the feature loss module if required
+if args.feature_scale > 0:
+    feature_extractor = VGG19().to(device)
 
 # Let's see how many Parameters our Model has!
 num_model_params = 0
@@ -132,17 +134,19 @@ for epoch in trange(start_epoch, args.nepoch, leave=False):
         images = images.to(device)
         bs, c, h, w = images.shape
 
+        # We will train with mixed precision!
         with torch.cuda.amp.autocast():
             recon_img, mu, log_var = vae_net(images)
 
             kl_loss = hf.kl_loss(mu, log_var)
             mse_loss = F.mse_loss(recon_img, images)
+            loss = args.kl_scale * kl_loss + mse_loss
 
             # Perception loss
-            feat_in = torch.cat((recon_img, images), 0)
-            feature_loss = feature_extractor(feat_in)
-
-            loss = kl_loss + mse_loss + feature_loss
+            if args.feature_scale > 0:
+                feat_in = torch.cat((recon_img, images), 0)
+                feature_loss = feature_extractor(feat_in)
+                loss += args.feature_scale * feature_loss
 
         optimizer.zero_grad()
         scaler.scale(loss).backward()
@@ -151,6 +155,7 @@ for epoch in trange(start_epoch, args.nepoch, leave=False):
         scaler.step(optimizer)
         scaler.update()
 
+        # Log losses and other metrics for evaluation!
         data_logger["mu"].append(mu.mean().item())
         data_logger["mu_var"].append(mu.var().item())
         data_logger["log_var"].append(log_var.mean().item())
