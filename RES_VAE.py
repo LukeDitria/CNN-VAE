@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.utils.data
-import torch.nn.functional as F
 
 
 class ResDown(nn.Module):
@@ -35,9 +34,9 @@ class ResUp(nn.Module):
     def __init__(self, channel_in, channel_out, kernel_size=3, scale_factor=2):
         super(ResUp, self).__init__()
 
-        self.conv1 = nn.Conv2d(channel_in, channel_out // 2, kernel_size, 1, kernel_size // 2)
-        self.bn1 = nn.BatchNorm2d(channel_out // 2, eps=1e-4)
-        self.conv2 = nn.Conv2d(channel_out // 2, channel_out, kernel_size, 1, kernel_size // 2)
+        self.conv1 = nn.Conv2d(channel_in, channel_in // 2, kernel_size, 1, kernel_size // 2)
+        self.bn1 = nn.BatchNorm2d(channel_in // 2, eps=1e-4)
+        self.conv2 = nn.Conv2d(channel_in // 2, channel_out, kernel_size, 1, kernel_size // 2)
         self.bn2 = nn.BatchNorm2d(channel_out, eps=1e-4)
 
         self.conv3 = nn.Conv2d(channel_in, channel_out, kernel_size, 1, kernel_size // 2)
