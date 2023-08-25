@@ -4,10 +4,39 @@ A Res-Net Style VAE with an adjustable perceptual loss using a pre-trained vgg19
 Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.org/pdf/1610.00291.pdf)
 <br>
 # NEW!
-Added training script with loss logging etc. Dataset uses Pytorch "ImageFolder" dataset, code assumes there is no pre-defined train/test split and creates
+1.2) Added Dynamic Depth Architecture, define the "blocks" parameter, a list of channel scales. Each scale will create a new Res up/down block with each block scaling up/down by a factor of 2. 
+Default parameters will downsample a 3x64x64 image to a 512x4x4 latent space although any square image will work.
+<br>
+<br>
+1.1) Added training script with loss logging etc. Dataset uses Pytorch "ImageFolder" dataset, code assumes there is no pre-defined train/test split and creates
 one if w fixed random seed so it will be the same every time the code is run.<br>
-<b> Basic train command: </b><br>
-python3 train_vae.py -mn test_run --dataset_root #path to dataset root#
+<br>
+<b> Basic training command: </b>
+```
+python train_vae.py -mn test_run --dataset_root #path to dataset root#
+```
+
+<br>
+<b> Starting from an existing checkpoint: </b><br>
+
+```
+python train_vae.py -mn test_run --load_checkpoint --dataset_root #path to dataset root#
+```
+
+<br>
+<b> Train without a feature loss: </b><br>
+
+```
+python train_vae.py -mn test_run --feature_scale 0 --dataset_root #path to dataset root#
+```
+
+<br>
+<b> Define a Custom Architecture: </b><br>
+
+```
+python train_vae.py -mn test_run --latent_channels 512 --block_widths 1 2 4 8 --ch_multi 64 --dataset_root #path to dataset root#
+```
+
 <br>
 <br>
 ## Results
