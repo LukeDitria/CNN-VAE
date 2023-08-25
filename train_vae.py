@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.datasets as Datasets
@@ -14,8 +13,8 @@ from collections import defaultdict
 import argparse
 
 import Helpers as hf
-from RES_VAE import VAE
 from vgg19 import VGG19
+from RES_VAE_Dynamic import VAE
 
 parser = argparse.ArgumentParser(description="Training Params")
 # string args
@@ -33,7 +32,8 @@ parser.add_argument("--ch_multi", '-w', help="Channel width multiplier", type=in
 parser.add_argument("--device_index", help="GPU device index", type=int, default=0)
 parser.add_argument("--latent_channels", "-lc", help="Number of channels of the latent space", type=int, default=256)
 parser.add_argument("--save_interval", '-si', help="Number of iteration per save", type=int, default=256)
-
+parser.add_argument("--block_widths", '-bw', help="Channel multiplier for the input of each block",
+                    type=int, nargs='+', default=(1, 2, 4, 8))
 # float args
 parser.add_argument("--lr", help="Learning rate", type=float, default=1e-4)
 parser.add_argument("--feature_scale", "-fs", help="Feature loss scale", type=float, default=1)
@@ -70,11 +70,12 @@ test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False)
 
 # Get a test image batch from the test_loader to visualise the reconstruction quality etc
 dataiter = iter(test_loader)
-test_images, _ = dataiter.next()
+test_images, _ = next(dataiter)
 
 # Create AE network.
 vae_net = VAE(channel_in=test_images.shape[1],
               ch=args.ch_multi,
+              blocks=args.block_widths,
               latent_channels=args.latent_channels).to(device)
 
 # Setup optimizer
@@ -86,6 +87,8 @@ scaler = torch.cuda.amp.GradScaler()
 # Create the feature loss module if required
 if args.feature_scale > 0:
     feature_extractor = VGG19().to(device)
+else:
+    feature_extractor = None
 
 # Let's see how many Parameters our Model has!
 num_model_params = 0
@@ -143,7 +146,7 @@ for epoch in trange(start_epoch, args.nepoch, leave=False):
             loss = args.kl_scale * kl_loss + mse_loss
 
             # Perception loss
-            if args.feature_scale > 0:
+            if feature_extractor is not None:
                 feat_in = torch.cat((recon_img, images), 0)
                 feature_loss = feature_extractor(feat_in)
                 loss += args.feature_scale * feature_loss
