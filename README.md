@@ -2,6 +2,10 @@
 # CNN-VAE
 A Res-Net Style VAE with an adjustable perceptual loss using a pre-trained vgg19. <br>
 Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.org/pdf/1610.00291.pdf)
+ <br>
+<br>
+<b> Latent space interpolation </b> <br>
+![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
 <br>
 # NEW!
 1.2) Added Dynamic Depth Architecture, define the "blocks" parameter, a list of channel scales. Each scale will create a new Res up/down block with each block scaling up/down by a factor of 2. 
@@ -38,13 +42,13 @@ python train_vae.py -mn test_run --latent_channels 512 --block_widths 1 2 4 8 --
 ```
 
 <br>
-<br>
-## Results
-Latent space interpolation <br>
-![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
 
+# Results
+
+<br>
 Results on validation images of the STL10 dataset at 64x64 with a latent vector size of 512 (images on top are the reconstruction)
 NOTE: RES_VAE_64_old.py was used to generate the results below<br>
+
 **With Perception loss**
 <br>
 ![VAE Trained with perception/feature loss](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE_STL10_64.png)
