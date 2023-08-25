@@ -46,10 +46,11 @@ args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
 device = torch.device(args.device_index if use_cuda else "cpu")
-
+print("")
 
 # Create dataloaders
 # This code assumes there is no pre-defined test/train split and will create one for you
+print("-Target Image Size %d" % args.image_size)
 transform = transforms.Compose([transforms.Resize(args.image_size),
                                 transforms.CenterCrop(args.image_size),
                                 transforms.RandomHorizontalFlip(0.5),
@@ -87,14 +88,19 @@ scaler = torch.cuda.amp.GradScaler()
 # Create the feature loss module if required
 if args.feature_scale > 0:
     feature_extractor = VGG19().to(device)
+    print("-VGG19 Feature Loss ON")
 else:
     feature_extractor = None
+    print("-VGG19 Feature Loss OFF")
 
 # Let's see how many Parameters our Model has!
 num_model_params = 0
 for param in vae_net.parameters():
     num_model_params += param.flatten().shape[0]
-print("This model has %d (approximately %d Million) Parameters!" % (num_model_params, num_model_params//1e6))
+
+print("-This Model Has %d (Approximately %d Million) Parameters!" % (num_model_params, num_model_params//1e6))
+fm_size = args.image_size//(2 ** len(args.block_widths))
+print("-The Latent Space Size Is %dx%dx%d!" % (args.latent_channels, fm_size, fm_size))
 
 # Create the save directory if it does not exist
 if not os.path.isdir(args.save_dir + "/Models"):
@@ -107,27 +113,31 @@ if not os.path.isdir(args.save_dir + "/Results"):
 # it does to prevent accidental overwriting. If no checkpoint exists, it starts from scratch.
 save_file_name = args.model_name + "_" + str(args.image_size)
 if args.load_checkpoint:
-    checkpoint = torch.load(args.save_dir + "/Models/" + save_file_name + ".pt",
-                            map_location="cpu")
-    print("Checkpoint loaded")
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    vae_net.load_state_dict(checkpoint['model_state_dict'])
+    if os.path.isfile(args.save_dir + "/Models/" + save_file_name + ".pt"):
+        checkpoint = torch.load(args.save_dir + "/Models/" + save_file_name + ".pt",
+                                map_location="cpu")
+        print("-Checkpoint loaded!")
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        vae_net.load_state_dict(checkpoint['model_state_dict'])
 
-    if not optimizer.param_groups[0]["lr"] == args.lr:
-        print("Updating lr!")
-        optimizer.param_groups[0]["lr"] = args.lr
+        if not optimizer.param_groups[0]["lr"] == args.lr:
+            print("Updating lr!")
+            optimizer.param_groups[0]["lr"] = args.lr
 
-    start_epoch = checkpoint["epoch"]
-    data_logger = defaultdict(lambda: [], checkpoint["data_logger"])
+        start_epoch = checkpoint["epoch"]
+        data_logger = defaultdict(lambda: [], checkpoint["data_logger"])
+    else:
+        raise ValueError("Warning Checkpoint does NOT exist -> check model name or save directory")
 else:
     # If checkpoint does exist raise an error to prevent accidental overwriting
     if os.path.isfile(args.save_dir + "/Models/" + save_file_name + ".pt"):
-        raise ValueError("Warning Checkpoint exists")
+        raise ValueError("Warning Checkpoint exists -> add -cp flag to use this checkpoint")
     else:
         print("Starting from scratch")
         start_epoch = 0
         # Loss and metrics logger
         data_logger = defaultdict(lambda: [])
+print("")
 
 # Start training loop
 for epoch in trange(start_epoch, args.nepoch, leave=False):
