@@ -160,6 +160,7 @@ for epoch in trange(start_epoch, args.nepoch, leave=False):
                 feat_in = torch.cat((recon_img, images), 0)
                 feature_loss = feature_extractor(feat_in)
                 loss += args.feature_scale * feature_loss
+                data_logger["feature_loss"].append(feature_loss.item())
 
         optimizer.zero_grad()
         scaler.scale(loss).backward()
@@ -176,7 +177,6 @@ for epoch in trange(start_epoch, args.nepoch, leave=False):
 
         data_logger["kl_loss"].append(kl_loss.item())
         data_logger["img_mse"].append(mse_loss.item())
-        data_logger["feature_loss"].append(feature_loss.item())
 
         # Save results and a checkpoint at regular intervals
         if (current_iter + 1) % args.save_interval == 0:
