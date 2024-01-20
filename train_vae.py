@@ -46,6 +46,8 @@ parser.add_argument("--kl_scale", "-ks", help="KL penalty scale", type=float, de
 
 # bool args
 parser.add_argument("--load_checkpoint", '-cp', action='store_true', help="Load from checkpoint")
+parser.add_argument("--deep_model", '-dm', action='store_true',
+                    help="Deep Model adds an additional res-identity block to each down/up sampling stage")
 
 args = parser.parse_args()
 
@@ -84,13 +86,21 @@ vae_net = VAE(channel_in=test_images.shape[1],
               blocks=args.block_widths,
               latent_channels=args.latent_channels,
               num_res_blocks=args.num_res_blocks,
-              norm_type=args.norm_type).to(device)
+              norm_type=args.norm_type,
+              deep_model=args.deep_model).to(device)
 
 # Setup optimizer
 optimizer = optim.Adam(vae_net.parameters(), lr=args.lr)
 
 # AMP Scaler
 scaler = torch.cuda.amp.GradScaler()
+
+if args.norm_type == "bn":
+    print("-Using BatchNorm")
+elif args.norm_type == "gn":
+    print("-Using GroupNorm")
+else:
+    ValueError("norm_type must be bn or gn")
 
 # Create the feature loss module if required
 if args.feature_scale > 0:

@@ -9,7 +9,7 @@ def get_norm_layer(channels, norm_type="bn"):
     elif norm_type == "gn":
         return nn.GroupNorm(8, channels, eps=1e-4)
     else:
-        ValueError("norn_type bust be bn or gn")
+        ValueError("norm_type must be bn or gn")
 
 
 class ResDown(nn.Module):
@@ -32,7 +32,7 @@ class ResDown(nn.Module):
     def forward(self, x):
         x = self.act_fnc(self.norm1(x))
 
-        # Combine skip and first conv into on layer for speed
+        # Combine skip and first conv into one layer for speed
         x_cat = self.conv1(x)
         skip = x_cat[:, :self.channel_out]
         x = x_cat[:, self.channel_out:]
@@ -64,7 +64,7 @@ class ResUp(nn.Module):
     def forward(self, x_in):
         x = self.up_nn(self.act_fnc(self.norm1(x_in)))
 
-        # Combine skip and first conv into on layer for speed
+        # Combine skip and first conv into one layer for speed
         x_cat = self.conv1(x)
         skip = x_cat[:, :self.channel_out]
         x = x_cat[:, self.channel_out:]
@@ -117,7 +117,8 @@ class Encoder(nn.Module):
     Encoder block
     """
 
-    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn"):
+    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn",
+                 deep_model=False):
         super(Encoder, self).__init__()
         self.conv_in = nn.Conv2d(channels, blocks[0] * ch, 3, 1, 1)
 
@@ -126,6 +127,11 @@ class Encoder(nn.Module):
 
         self.layer_blocks = nn.ModuleList([])
         for w_in, w_out in zip(widths_in, widths_out):
+
+            if deep_model:
+                # Add an additional non down-sampling block before down-sampling
+                self.layer_blocks.append(ResBlock(w_in * ch, w_in * ch, norm_type=norm_type))
+
             self.layer_blocks.append(ResDown(w_in * ch, w_out * ch, norm_type=norm_type))
 
         for _ in range(num_res_blocks):
@@ -164,7 +170,8 @@ class Decoder(nn.Module):
     Built to be a mirror of the encoder block
     """
 
-    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn"):
+    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn",
+                 deep_model=False):
         super(Decoder, self).__init__()
         widths_out = list(blocks)[::-1]
         widths_in = (list(blocks[1:]) + [2 * blocks[-1]])[::-1]
@@ -177,6 +184,9 @@ class Decoder(nn.Module):
 
         for w_in, w_out in zip(widths_in, widths_out):
             self.layer_blocks.append(ResUp(w_in * ch, w_out * ch, norm_type=norm_type))
+            if deep_model:
+                # Add an additional non up-sampling block after up-sampling
+                self.layer_blocks.append(ResBlock(w_out * ch, w_out * ch, norm_type=norm_type))
 
         self.conv_out = nn.Conv2d(blocks[0] * ch, channels, 5, 1, 2)
         self.act_fnc = nn.ELU()
@@ -195,7 +205,8 @@ class VAE(nn.Module):
     """
     VAE network, uses the above encoder and decoder blocks
     """
-    def __init__(self, channel_in=3, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn"):
+    def __init__(self, channel_in=3, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn",
+                 deep_model=False):
         super(VAE, self).__init__()
         """Res VAE Network
         channel_in  = number of channels of the image 
@@ -204,9 +215,9 @@ class VAE(nn.Module):
         """
         
         self.encoder = Encoder(channel_in, ch=ch, blocks=blocks, latent_channels=latent_channels,
-                               num_res_blocks=num_res_blocks, norm_type=norm_type)
+                               num_res_blocks=num_res_blocks, norm_type=norm_type, deep_model=deep_model)
         self.decoder = Decoder(channel_in, ch=ch, blocks=blocks, latent_channels=latent_channels,
-                               num_res_blocks=num_res_blocks, norm_type=norm_type)
+                               num_res_blocks=num_res_blocks, norm_type=norm_type, deep_model=deep_model)
 
     def forward(self, x):
         encoding, mu, log_var = self.encoder(x)
