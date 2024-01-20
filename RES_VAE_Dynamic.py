@@ -117,7 +117,7 @@ class Encoder(nn.Module):
     Encoder block
     """
 
-    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=2, norm_type="bn"):
+    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn"):
         super(Encoder, self).__init__()
         self.conv_in = nn.Conv2d(channels, blocks[0] * ch, 3, 1, 1)
 
@@ -164,7 +164,7 @@ class Decoder(nn.Module):
     Built to be a mirror of the encoder block
     """
 
-    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=2, norm_type="bn"):
+    def __init__(self, channels, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn"):
         super(Decoder, self).__init__()
         widths_out = list(blocks)[::-1]
         widths_in = (list(blocks[1:]) + [2 * blocks[-1]])[::-1]
@@ -195,7 +195,7 @@ class VAE(nn.Module):
     """
     VAE network, uses the above encoder and decoder blocks
     """
-    def __init__(self, channel_in=3, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, norm_type="bn"):
+    def __init__(self, channel_in=3, ch=64, blocks=(1, 2, 4, 8), latent_channels=256, num_res_blocks=1, norm_type="bn"):
         super(VAE, self).__init__()
         """Res VAE Network
         channel_in  = number of channels of the image 
@@ -203,8 +203,10 @@ class VAE(nn.Module):
         (for a 64x64 image this is the size of the latent vector)
         """
         
-        self.encoder = Encoder(channel_in, ch=ch, blocks=blocks, latent_channels=latent_channels, norm_type=norm_type)
-        self.decoder = Decoder(channel_in, ch=ch, blocks=blocks, latent_channels=latent_channels, norm_type=norm_type)
+        self.encoder = Encoder(channel_in, ch=ch, blocks=blocks, latent_channels=latent_channels,
+                               num_res_blocks=num_res_blocks, norm_type=norm_type)
+        self.decoder = Decoder(channel_in, ch=ch, blocks=blocks, latent_channels=latent_channels,
+                               num_res_blocks=num_res_blocks, norm_type=norm_type)
 
     def forward(self, x):
         encoding, mu, log_var = self.encoder(x)

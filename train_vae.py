@@ -31,6 +31,9 @@ parser.add_argument("--batch_size", "-bs", help="Training batch size", type=int,
 parser.add_argument("--image_size", '-ims', help="Input image size", type=int, default=64)
 parser.add_argument("--ch_multi", '-w', help="Channel width multiplier", type=int, default=64)
 
+parser.add_argument("--num_res_blocks", '-nrb',
+                    help="Number of simple res blocks at the bottle-neck of the model", type=int, default=1)
+
 parser.add_argument("--device_index", help="GPU device index", type=int, default=0)
 parser.add_argument("--latent_channels", "-lc", help="Number of channels of the latent space", type=int, default=256)
 parser.add_argument("--save_interval", '-si', help="Number of iteration per save", type=int, default=256)
@@ -80,6 +83,7 @@ vae_net = VAE(channel_in=test_images.shape[1],
               ch=args.ch_multi,
               blocks=args.block_widths,
               latent_channels=args.latent_channels,
+              num_res_blocks=args.num_res_blocks,
               norm_type=args.norm_type).to(device)
 
 # Setup optimizer
