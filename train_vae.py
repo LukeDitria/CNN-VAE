@@ -22,6 +22,8 @@ parser.add_argument("--model_name", "-mn", help="Experiment save name", type=str
 parser.add_argument("--dataset_root", "-dr", help="Dataset root dir", type=str, required=True)
 
 parser.add_argument("--save_dir", "-sd", help="Root dir for saving model and data", type=str, default=".")
+parser.add_argument("--norm_type", "-nt",
+                    help="Type of normalisation layer used, BatchNorm (bn) or GroupNorm (gn)", type=str, default="bn")
 
 # int args
 parser.add_argument("--nepoch", help="Number of training epochs", type=int, default=2000)
@@ -77,7 +79,8 @@ test_images, _ = next(dataiter)
 vae_net = VAE(channel_in=test_images.shape[1],
               ch=args.ch_multi,
               blocks=args.block_widths,
-              latent_channels=args.latent_channels).to(device)
+              latent_channels=args.latent_channels,
+              norm_type=args.norm_type).to(device)
 
 # Setup optimizer
 optimizer = optim.Adam(vae_net.parameters(), lr=args.lr)
@@ -165,7 +168,7 @@ for epoch in trange(start_epoch, args.nepoch, leave=False):
         optimizer.zero_grad()
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(vae_net.parameters(), 40)
+        torch.nn.utils.clip_grad_norm_(vae_net.parameters(), 10)
         scaler.step(optimizer)
         scaler.update()
 
