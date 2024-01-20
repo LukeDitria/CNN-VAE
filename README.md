@@ -8,20 +8,28 @@ Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.or
 ![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
 <br>
 # NEW!
-**Let me know if any other features would be useful!**
-
-1.2) Added Dynamic Depth Architecture, define the "blocks" parameter, a list of channel scales. Each scale will create a new Res up/down block with each block scaling up/down by a factor of 2. 
+**Let me know if any other features would be useful!**<br><br>
+<b>1.3)</b> Default model is now much larger, but still has a similar memory usage plus much better performance. Added some additional arguments for greater customization!<br>
+--norm_type arg to change the layer norm type between BatchNorm (bn) and GroupNorm (gn), use GroupNorm if you can only train with a small batch size.<br>
+--num_res_blocks arg defines how many Res-Identity blocks are at the BottleNeck for both the Encoder and Decoder, increase this for a deeper model while maintaining low memory footprint.<br>
+--deep_model arg will add a Res-Identity block to each of the up/down-sampling stages for both the Encoder and Decoder, use this to increase depth, but will result in a larger memory footprint + slower training.
+<br>
+<br>
+<b>1.2)</b> Added Dynamic Depth Architecture, define the "blocks" parameter, a list of channel scales. Each scale will create a new Res up/down block with each block scaling up/down by a factor of 2. 
 Default parameters will downsample a 3x64x64 image to a 256x4x4 latent space although any square image will work.
 <br>
 <br>
-1.1) Added training script with loss logging etc. Dataset uses Pytorch "ImageFolder" dataset, code assumes there is no pre-defined train/test split and creates
+<b>1.1)</b> Added training script with loss logging etc. Dataset uses Pytorch "ImageFolder" dataset, code assumes there is no pre-defined train/test split and creates
 one if w fixed random seed so it will be the same every time the code is run.<br>
 
 # Training Examples
+<b>Notes:</b><br>
+Avoid using a Bottle-Neck feature map size of less than 4x4 as all conv kernels are 3x3, if you do set --num_res_blocks to 0 to avoid adding a lot of model parameters that won't do much <br>
+If you can only train with a very small batch size consider using GroupNorm instead of BatchNorm, aka set --norm_type to gn.<br>
 
 <br>
 <b> Basic training command: </b><br>
-This will create a 27 Million Parameter VAE for a 64x64 sized image and will create a 256x4x4 latent representation.
+This will create a 51 Million Parameter VAE for a 64x64 sized image and will create a 256x4x4 latent representation.
 
 ```
 python train_vae.py -mn test_run --dataset_root #path to dataset root#
@@ -59,6 +67,13 @@ Example showing how to change the image size (128x128) used while keeping the sa
 python train_vae.py -mn test_run --image_size 128 --block_widths 1 2 4 4 8 --dataset_root #path to dataset root#
 ```
 
+Train with a 128x128 image with a deeper model by adding Res-Identity Blocks to each down/up-sample stage without additional downsampling.
+
+```
+python train_vae.py -mn test_run --image_size 128 --deep_model  --latent_channels 64 --dataset_root #path to dataset root#
+```
+
+Latent space representation will be 64x8x8, same number of latent variables as before, but a different shape!
 
 <br>
 
