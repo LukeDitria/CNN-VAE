@@ -7,6 +7,7 @@ Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.or
 <b> Latent space interpolation </b> <br>
 ![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
 <br>
+<br>
 # NEW!
 **Let me know if any other features would be useful!**<br><br>
 <b>1.3)</b> Default model is now much larger, but still has a similar memory usage plus much better performance. Added some additional arguments for greater customization!<br>
@@ -94,10 +95,16 @@ NOTE: RES_VAE_64_old.py was used to generate the results below<br>
 
 ## Additional Results - celeba
 The images in the STL10 have a lot of variation meaning more "features" need to be encoded in the latent space to achieve a good reconstruction. Using a data-set with less variation (and the same latent vector size) should results in a higher quality reconstructed image.
-
 ![Celeba trained with perception loss](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE_celeba_64.png)
-
+<br>
 **New Model** Test images from VAE trained on CelebA at 128x128 resolution (latent space is therefore 512x2x2) using all layers of the VGG model for the perception loss
 ![Celeba 128x128 test images trained with perception loss](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE_CelebA_all_Feat_new_model_128.png)
-
+<br>
+<br>
+# My Pytorch Deep Learning Series on Youtube
+[Whole Playlist](https://youtube.com/playlist?list=PLN8j_qfCJpNhhY26TQpXC5VeK-_q3YLPa&si=EVHfovKS-vQ_VZ5a)<br>
+[Pytorch VAE Basics](https://youtu.be/dDJv6DiuqEk)<br>
+<br>
+# If you found this code useful
+[Buy me a Coffee](https://www.buymeacoffee.com/lukeditria)
 
