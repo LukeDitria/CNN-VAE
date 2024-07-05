@@ -8,6 +8,13 @@ Based off of ![Deep Feature Consistent Variational Autoencoder](https://arxiv.or
 ![Latent space interpolation](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE.gif)
 <br>
 <br>
+# My Pytorch Deep Learning Series on Youtube
+[Whole Playlist](https://youtube.com/playlist?list=PLN8j_qfCJpNhhY26TQpXC5VeK-_q3YLPa&si=EVHfovKS-vQ_VZ5a)<br>
+[Pytorch VAE Basics](https://youtu.be/dDJv6DiuqEk)<br>
+<br>
+# If you found this code useful
+[Buy me a Coffee](https://www.buymeacoffee.com/lukeditria)
+
 # NEW!
 **Let me know if any other features would be useful!**<br><br>
 <b>1.3)</b> Default model is now much larger, but still has a similar memory usage plus much better performance. Added some additional arguments for greater customization!<br>
@@ -104,10 +111,14 @@ The images in the STL10 have a lot of variation meaning more "features" need to 
 ![Celeba 128x128 test images trained with perception loss](https://github.com/LukeDitria/CNN-VAE/blob/master/Results/VAE_CelebA_all_Feat_new_model_128.png)
 <br>
 <br>
-# My Pytorch Deep Learning Series on Youtube
-[Whole Playlist](https://youtube.com/playlist?list=PLN8j_qfCJpNhhY26TQpXC5VeK-_q3YLPa&si=EVHfovKS-vQ_VZ5a)<br>
-[Pytorch VAE Basics](https://youtu.be/dDJv6DiuqEk)<br>
-<br>
-# If you found this code useful
-[Buy me a Coffee](https://www.buymeacoffee.com/lukeditria)
+
+# As Used in:
+```
+@article{ditria2023long,
+  title={Long-Term Prediction of Natural Video Sequences with Robust Video Predictors},
+  author={Ditria, Luke and Drummond, Tom},
+  journal={arXiv preprint arXiv:2308.11079},
+  year={2023}
+}
+```
 
